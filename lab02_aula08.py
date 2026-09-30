@@ -16,576 +16,576 @@ NUM_EXECUCOES = 10
 DIRETORIO_RESULTADOS = "resultados"
 
 NOMES = [
-"auth",
-"usuarios",
-"catalogo",
-"pagamentos",
-"pedidos",
-"estoque",
-"notificacoes",
-"analytics",
-"recomendacao",
-"busca",
-"chat",
-"logs",
-"monitoramento",
-"relatorios",
-"fraude"
+    "auth",
+    "usuarios",
+    "catalogo",
+    "pagamentos",
+    "pedidos",
+    "estoque",
+    "notificacoes",
+    "analytics",
+    "recomendacao",
+    "busca",
+    "chat",
+    "logs",
+    "monitoramento",
+    "relatorios",
+    "fraude"
 ]
 
 VALOR = np.array([
-12, 15, 18, 30, 24,
-20, 14, 25, 28, 17,
-16, 10, 13, 22, 32
+    12, 15, 18, 30, 24,
+    20, 14, 25, 28, 17,
+    16, 10, 13, 22, 32
 ], dtype=float)
 
 RAM = np.array([
-1.0, 1.2, 1.8, 2.5, 2.0,
-1.7, 1.1, 2.3, 2.8, 1.5,
-1.4, 0.8, 1.0, 2.1, 3.0
+    1.0, 1.2, 1.8, 2.5, 2.0,
+    1.7, 1.1, 2.3, 2.8, 1.5,
+    1.4, 0.8, 1.0, 2.1, 3.0
 ])
 
 CPU = np.array([
-0.5, 0.7, 0.8, 1.4, 1.2,
-1.0, 0.6, 1.3, 1.6, 0.9,
-0.8, 0.4, 0.5, 1.1, 1.8
+    0.5, 0.7, 0.8, 1.4, 1.2,
+    1.0, 0.6, 1.3, 1.6, 0.9,
+    0.8, 0.4, 0.5, 1.1, 1.8
 ])
 
 def calcular_recursos(individuo):
 
-ram_total = np.sum(individuo * RAM)
-cpu_total = np.sum(individuo * CPU)
-valor_total = np.sum(individuo * VALOR)
+    ram_total = np.sum(individuo * RAM)
+    cpu_total = np.sum(individuo * CPU)
+    valor_total = np.sum(individuo * VALOR)
 
-return valor_total, ram_total, cpu_total
+    return valor_total, ram_total, cpu_total
 
 
 def fitness_rigido(individuo):
 
-valor, ram, cpu = calcular_recursos(individuo)
+    valor, ram, cpu = calcular_recursos(individuo)
 
-if (
-    ram > CAPACIDADE_RAM
-    or cpu > CAPACIDADE_CPU
-):
-    return 0.0
+    if (
+        ram > CAPACIDADE_RAM
+        or cpu > CAPACIDADE_CPU
+    ):
+        return 0.0
 
-return valor
+    return valor
 
 
 def fitness_proporcional(individuo):
 
-valor, ram, cpu = calcular_recursos(individuo)
+    valor, ram, cpu = calcular_recursos(individuo)
 
-excesso_ram = max(
-    0.0,
-    ram - CAPACIDADE_RAM
-)
+    excesso_ram = max(
+        0.0,
+        ram - CAPACIDADE_RAM
+    )
 
-excesso_cpu = max(
-    0.0,
-    cpu - CAPACIDADE_CPU
-)
+    excesso_cpu = max(
+        0.0,
+        cpu - CAPACIDADE_CPU
+    )
 
-penalidade_ram = (
-    excesso_ram / CAPACIDADE_RAM
-)
+    penalidade_ram = (
+        excesso_ram / CAPACIDADE_RAM
+    )
 
-penalidade_cpu = (
-    excesso_cpu / CAPACIDADE_CPU
-)
+    penalidade_cpu = (
+        excesso_cpu / CAPACIDADE_CPU
+    )
 
-fator_ram = max(
-    0.0,
-    1.0 - penalidade_ram
-)
+    fator_ram = max(
+        0.0,
+        1.0 - penalidade_ram
+    )
 
-fator_cpu = max(
-    0.0,
-    1.0 - penalidade_cpu
-)
+    fator_cpu = max(
+        0.0,
+        1.0 - penalidade_cpu
+    )
 
-return valor * fator_ram * fator_cpu
+    return valor * fator_ram * fator_cpu
 
 
 def reparar_individuo(individuo, rng):
 
-individuo = individuo.copy()
+    individuo = individuo.copy()
 
-while True:
+    while True:
 
-    _, ram, cpu = calcular_recursos(individuo)
+        _, ram, cpu = calcular_recursos(individuo)
 
-    if (
-        ram <= CAPACIDADE_RAM
-        and cpu <= CAPACIDADE_CPU
-    ):
-        break
+        if (
+            ram <= CAPACIDADE_RAM
+            and cpu <= CAPACIDADE_CPU
+        ):
+            break
 
-    selecionados = np.where(
-        individuo == 1
-    )[0]
+        selecionados = np.where(
+            individuo == 1
+        )[0]
 
-    if len(selecionados) == 0:
-        break
+        if len(selecionados) == 0:
+            break
 
-    razoes = []
+        razoes = []
 
-    for indice in selecionados:
+        for indice in selecionados:
 
-        consumo = RAM[indice] + CPU[indice]
+            consumo = RAM[indice] + CPU[indice]
 
-        razao = (
-            VALOR[indice]
-            / max(consumo, 0.001)
+            razao = (
+                VALOR[indice]
+                / max(consumo, 0.001)
+            )
+
+            razoes.append(
+                (razao, indice)
+            )
+
+        _, indice_remover = min(
+            razoes,
+            key=lambda x: x[0]
         )
 
-        razoes.append(
-            (razao, indice)
-        )
+        individuo[indice_remover] = 0
 
-    _, indice_remover = min(
-        razoes,
-        key=lambda x: x[0]
-    )
-
-    individuo[indice_remover] = 0
-
-return individuo
+    return individuo
 
 
 def criar_individuo(rng):
 
-return rng.integers(
-    0,
-    2,
-    size=NUM_SERVICOS
-).astype(int)
+    return rng.integers(
+        0,
+        2,
+        size=NUM_SERVICOS
+    ).astype(int)
 
 
 def criar_populacao(rng):
 
-return np.array([
-    criar_individuo(rng)
-    for _ in range(TAMANHO_POPULACAO)
-])
+    return np.array([
+        criar_individuo(rng)
+        for _ in range(TAMANHO_POPULACAO)
+    ])
 
 
 def selecao_torneio(
-populacao,
-fitness,
-rng
+    populacao,
+    fitness,
+    rng
 ):
 
-indices = rng.choice(
-    len(populacao),
-    size=TAMANHO_TORNEIO,
-    replace=False
-)
+    indices = rng.choice(
+        len(populacao),
+        size=TAMANHO_TORNEIO,
+        replace=False
+    )
 
-melhor = indices[
-    np.argmax(fitness[indices])
-]
+    melhor = indices[
+        np.argmax(fitness[indices])
+    ]
 
-return populacao[melhor].copy()
+    return populacao[melhor].copy()
 
 
 def crossover_ponto_unico(
-pai1,
-pai2,
-rng
+    pai1,
+    pai2,
+    rng
 ):
 
-if rng.random() > TAXA_CROSSOVER:
-    return pai1.copy(), pai2.copy()
+    if rng.random() > TAXA_CROSSOVER:
+        return pai1.copy(), pai2.copy()
 
-ponto = rng.integers(
-    1,
-    NUM_SERVICOS
-)
+    ponto = rng.integers(
+        1,
+        NUM_SERVICOS
+    )
 
-filho1 = np.concatenate([
-    pai1[:ponto],
-    pai2[ponto:]
-])
+    filho1 = np.concatenate([
+        pai1[:ponto],
+        pai2[ponto:]
+    ])
 
-filho2 = np.concatenate([
-    pai2[:ponto],
-    pai1[ponto:]
-])
+    filho2 = np.concatenate([
+        pai2[:ponto],
+        pai1[ponto:]
+    ])
 
-return filho1, filho2
+    return filho1, filho2
 
 
 def mutacao(individuo, rng):
 
-individuo = individuo.copy()
+    individuo = individuo.copy()
 
-for i in range(NUM_SERVICOS):
+    for i in range(NUM_SERVICOS):
 
-    if rng.random() < TAXA_MUTACAO:
-        individuo[i] = 1 - individuo[i]
+        if rng.random() < TAXA_MUTACAO:
+            individuo[i] = 1 - individuo[i]
 
-return individuo
+    return individuo
 
 
 def calcular_diversidade(populacao):
 
-if len(populacao) == 0:
-    return 0.0
+    if len(populacao) == 0:
+        return 0.0
 
-individuos_unicos = set(
-    tuple(individuo)
-    for individuo in populacao
-)
+    individuos_unicos = set(
+        tuple(individuo)
+        for individuo in populacao
+    )
 
-return (
-    len(individuos_unicos)
-    / len(populacao)
-)
+    return (
+        len(individuos_unicos)
+        / len(populacao)
+    )
 
 
 def executar_ag(estrategia, seed):
 
-rng = np.random.default_rng(seed)
+    rng = np.random.default_rng(seed)
 
-populacao = criar_populacao(rng)
+    populacao = criar_populacao(rng)
 
-historico_media = []
-historico_desvio = []
-historico_diversidade = []
+    historico_media = []
+    historico_desvio = []
+    historico_diversidade = []
 
-melhor_individuo = None
-melhor_fitness = -np.inf
+    melhor_individuo = None
+    melhor_fitness = -np.inf
 
-for _ in range(NUM_GERACOES):
+    for _ in range(NUM_GERACOES):
 
-    if estrategia == "A":
+        if estrategia == "A":
 
-        fitness = np.array([
-            fitness_rigido(ind)
-            for ind in populacao
-        ])
+            fitness = np.array([
+                fitness_rigido(ind)
+                for ind in populacao
+            ])
 
-    else:
+        else:
 
-        fitness = np.array([
-            fitness_proporcional(ind)
-            for ind in populacao
-        ])
+            fitness = np.array([
+                fitness_proporcional(ind)
+                for ind in populacao
+            ])
 
-    media = np.mean(fitness)
-    desvio = np.std(fitness)
+        media = np.mean(fitness)
+        desvio = np.std(fitness)
 
-    diversidade = calcular_diversidade(
-        populacao
-    )
-
-    historico_media.append(media)
-    historico_desvio.append(desvio)
-    historico_diversidade.append(diversidade)
-
-    indice_melhor = np.argmax(fitness)
-
-    if fitness[indice_melhor] > melhor_fitness:
-
-        melhor_fitness = fitness[indice_melhor]
-
-        melhor_individuo = (
-            populacao[indice_melhor].copy()
+        diversidade = calcular_diversidade(
+            populacao
         )
 
-    nova_populacao = []
+        historico_media.append(media)
+        historico_desvio.append(desvio)
+        historico_diversidade.append(diversidade)
 
-    while len(nova_populacao) < TAMANHO_POPULACAO:
+        indice_melhor = np.argmax(fitness)
 
-        pai1 = selecao_torneio(
-            populacao,
-            fitness,
-            rng
-        )
+        if fitness[indice_melhor] > melhor_fitness:
 
-        pai2 = selecao_torneio(
-            populacao,
-            fitness,
-            rng
-        )
+            melhor_fitness = fitness[indice_melhor]
 
-        filho1, filho2 = crossover_ponto_unico(
-            pai1,
-            pai2,
-            rng
-        )
+            melhor_individuo = (
+                populacao[indice_melhor].copy()
+            )
 
-        filho1 = mutacao(
-            filho1,
-            rng
-        )
+        nova_populacao = []
 
-        filho2 = mutacao(
-            filho2,
-            rng
-        )
+        while len(nova_populacao) < TAMANHO_POPULACAO:
 
-        filho1 = reparar_individuo(
-            filho1,
-            rng
-        )
+            pai1 = selecao_torneio(
+                populacao,
+                fitness,
+                rng
+            )
 
-        filho2 = reparar_individuo(
-            filho2,
-            rng
-        )
+            pai2 = selecao_torneio(
+                populacao,
+                fitness,
+                rng
+            )
 
-        nova_populacao.append(filho1)
+            filho1, filho2 = crossover_ponto_unico(
+                pai1,
+                pai2,
+                rng
+            )
 
-        if len(nova_populacao) < TAMANHO_POPULACAO:
-            nova_populacao.append(filho2)
+            filho1 = mutacao(
+                filho1,
+                rng
+            )
 
-    populacao = np.array(nova_populacao)
+            filho2 = mutacao(
+                filho2,
+                rng
+            )
 
-return {
-    "estrategia": estrategia,
-    "melhor_individuo": melhor_individuo,
-    "melhor_fitness": melhor_fitness,
-    "media": historico_media,
-    "desvio": historico_desvio,
-    "diversidade": historico_diversidade
-}
+            filho1 = reparar_individuo(
+                filho1,
+                rng
+            )
+
+            filho2 = reparar_individuo(
+                filho2,
+                rng
+            )
+
+            nova_populacao.append(filho1)
+
+            if len(nova_populacao) < TAMANHO_POPULACAO:
+                nova_populacao.append(filho2)
+
+        populacao = np.array(nova_populacao)
+
+    return {
+        "estrategia": estrategia,
+        "melhor_individuo": melhor_individuo,
+        "melhor_fitness": melhor_fitness,
+        "media": historico_media,
+        "desvio": historico_desvio,
+        "diversidade": historico_diversidade
+    }
 
 
 def listar_servicos(individuo):
 
-selecionados = []
+    selecionados = []
 
-for i, bit in enumerate(individuo):
+    for i, bit in enumerate(individuo):
 
-    if bit == 1:
+        if bit == 1:
 
-        selecionados.append({
-            "indice": i + 1,
-            "nome": NOMES[i],
-            "valor": VALOR[i],
-            "ram": RAM[i],
-            "cpu": CPU[i]
-        })
+            selecionados.append({
+                "indice": i + 1,
+                "nome": NOMES[i],
+                "valor": VALOR[i],
+                "ram": RAM[i],
+                "cpu": CPU[i]
+            })
 
-return selecionados
+    return selecionados
 
 
 def main():
 
-os.makedirs(
-    DIRETORIO_RESULTADOS,
-    exist_ok=True
-)
-
-resultados = {}
-
-for estrategia in ["A", "B"]:
-
-    print("\n")
-    print("=" * 70)
-    print(f"ESTRATÉGIA {estrategia}")
-    print("=" * 70)
-
-    execucoes = []
-
-    for execucao in range(NUM_EXECUCOES):
-
-        resultado = executar_ag(
-            estrategia,
-            SEED + execucao
-        )
-
-        execucoes.append(resultado)
-
-    media_geracoes = np.mean(
-        [
-            r["media"]
-            for r in execucoes
-        ],
-        axis=0
+    os.makedirs(
+        DIRETORIO_RESULTADOS,
+        exist_ok=True
     )
 
-    desvio_geracoes = np.mean(
-        [
-            r["desvio"]
-            for r in execucoes
-        ],
-        axis=0
-    )
-
-    diversidade_geracoes = np.mean(
-        [
-            r["diversidade"]
-            for r in execucoes
-        ],
-        axis=0
-    )
-
-    melhor_execucao = max(
-        execucoes,
-        key=lambda r: r["melhor_fitness"]
-    )
-
-    resultados[estrategia] = {
-        "media": media_geracoes,
-        "desvio": desvio_geracoes,
-        "diversidade": diversidade_geracoes,
-        "melhor_individuo": (
-            melhor_execucao["melhor_individuo"]
-        ),
-        "melhor_fitness": (
-            melhor_execucao["melhor_fitness"]
-        )
-    }
-
-    individuo = melhor_execucao[
-        "melhor_individuo"
-    ]
-
-    valor, ram, cpu = calcular_recursos(
-        individuo
-    )
-
-    print("Melhor indivíduo:")
-    print(individuo)
-
-    print(
-        f"Fitness: "
-        f"{melhor_execucao['melhor_fitness']:.4f}"
-    )
-
-    print(f"Valor total: {valor:.4f}")
-    print(f"RAM: {ram:.4f} GB")
-    print(f"CPU: {cpu:.4f} cores")
-
-    print("\nMicrosserviços selecionados:")
-
-    for servico in listar_servicos(individuo):
-
-        print(
-            f"{servico['indice']:2d} - "
-            f"{servico['nome']:15s} | "
-            f"Valor={servico['valor']:5.1f} | "
-            f"RAM={servico['ram']:4.1f} | "
-            f"CPU={servico['cpu']:4.1f}"
-        )
-
-arquivo_csv = os.path.join(
-    DIRETORIO_RESULTADOS,
-    "lab02_resultados.csv"
-)
-
-with open(
-    arquivo_csv,
-    "w",
-    newline="",
-    encoding="utf-8"
-) as arquivo:
-
-    escritor = csv.writer(arquivo)
-
-    escritor.writerow([
-        "estrategia",
-        "melhor_fitness",
-        "valor_total",
-        "ram",
-        "cpu",
-        "diversidade_media"
-    ])
+    resultados = {}
 
     for estrategia in ["A", "B"]:
 
-        individuo = resultados[
-            estrategia
-        ]["melhor_individuo"]
+        print("\n")
+        print("=" * 70)
+        print(f"ESTRATÉGIA {estrategia}")
+        print("=" * 70)
+
+        execucoes = []
+
+        for execucao in range(NUM_EXECUCOES):
+
+            resultado = executar_ag(
+                estrategia,
+                SEED + execucao
+            )
+
+            execucoes.append(resultado)
+
+        media_geracoes = np.mean(
+            [
+                r["media"]
+                for r in execucoes
+            ],
+            axis=0
+        )
+
+        desvio_geracoes = np.mean(
+            [
+                r["desvio"]
+                for r in execucoes
+            ],
+            axis=0
+        )
+
+        diversidade_geracoes = np.mean(
+            [
+                r["diversidade"]
+                for r in execucoes
+            ],
+            axis=0
+        )
+
+        melhor_execucao = max(
+            execucoes,
+            key=lambda r: r["melhor_fitness"]
+        )
+
+        resultados[estrategia] = {
+            "media": media_geracoes,
+            "desvio": desvio_geracoes,
+            "diversidade": diversidade_geracoes,
+            "melhor_individuo": (
+                melhor_execucao["melhor_individuo"]
+            ),
+            "melhor_fitness": (
+                melhor_execucao["melhor_fitness"]
+            )
+        }
+
+        individuo = melhor_execucao[
+            "melhor_individuo"
+        ]
 
         valor, ram, cpu = calcular_recursos(
             individuo
         )
 
-        diversidade_media = np.mean(
-            resultados[
-                estrategia
-            ]["diversidade"]
+        print("Melhor indivíduo:")
+        print(individuo)
+
+        print(
+            f"Fitness: "
+            f"{melhor_execucao['melhor_fitness']:.4f}"
         )
 
+        print(f"Valor total: {valor:.4f}")
+        print(f"RAM: {ram:.4f} GB")
+        print(f"CPU: {cpu:.4f} cores")
+
+        print("\nMicrosserviços selecionados:")
+
+        for servico in listar_servicos(individuo):
+
+            print(
+                f"{servico['indice']:2d} - "
+                f"{servico['nome']:15s} | "
+                f"Valor={servico['valor']:5.1f} | "
+                f"RAM={servico['ram']:4.1f} | "
+                f"CPU={servico['cpu']:4.1f}"
+            )
+
+    arquivo_csv = os.path.join(
+        DIRETORIO_RESULTADOS,
+        "lab02_resultados.csv"
+    )
+
+    with open(
+        arquivo_csv,
+        "w",
+        newline="",
+        encoding="utf-8"
+    ) as arquivo:
+
+        escritor = csv.writer(arquivo)
+
         escritor.writerow([
-            estrategia,
-            resultados[
-                estrategia
-            ]["melhor_fitness"],
-            valor,
-            ram,
-            cpu,
-            diversidade_media
+            "estrategia",
+            "melhor_fitness",
+            "valor_total",
+            "ram",
+            "cpu",
+            "diversidade_media"
         ])
 
-plt.figure(figsize=(10, 6))
+        for estrategia in ["A", "B"]:
 
-for estrategia in ["A", "B"]:
+            individuo = resultados[
+                estrategia
+            ]["melhor_individuo"]
 
-    plt.plot(
-        resultados[estrategia]["media"],
-        label=f"Estratégia {estrategia}"
+            valor, ram, cpu = calcular_recursos(
+                individuo
+            )
+
+            diversidade_media = np.mean(
+                resultados[
+                    estrategia
+                ]["diversidade"]
+            )
+
+            escritor.writerow([
+                estrategia,
+                resultados[
+                    estrategia
+                ]["melhor_fitness"],
+                valor,
+                ram,
+                cpu,
+                diversidade_media
+            ])
+
+    plt.figure(figsize=(10, 6))
+
+    for estrategia in ["A", "B"]:
+
+        plt.plot(
+            resultados[estrategia]["media"],
+            label=f"Estratégia {estrategia}"
+        )
+
+    plt.xlabel("Geração")
+    plt.ylabel("Fitness médio")
+    plt.title(
+        "LAB 02 - Fitness médio por geração"
     )
 
-plt.xlabel("Geração")
-plt.ylabel("Fitness médio")
-plt.title(
-    "LAB 02 - Fitness médio por geração"
-)
+    plt.grid(True, alpha=0.3)
+    plt.legend()
+    plt.tight_layout()
 
-plt.grid(True, alpha=0.3)
-plt.legend()
-plt.tight_layout()
-
-plt.savefig(
-    os.path.join(
-        DIRETORIO_RESULTADOS,
-        "lab02_fitness.png"
-    ),
-    dpi=150
-)
-
-plt.close()
-
-plt.figure(figsize=(10, 6))
-
-for estrategia in ["A", "B"]:
-
-    plt.plot(
-        resultados[estrategia]["diversidade"],
-        label=f"Estratégia {estrategia}"
+    plt.savefig(
+        os.path.join(
+            DIRETORIO_RESULTADOS,
+            "lab02_fitness.png"
+        ),
+        dpi=150
     )
 
-plt.xlabel("Geração")
-plt.ylabel("Diversidade genética")
-plt.title(
-    "LAB 02 - Diversidade genética"
-)
+    plt.close()
 
-plt.grid(True, alpha=0.3)
-plt.legend()
-plt.tight_layout()
+    plt.figure(figsize=(10, 6))
 
-plt.savefig(
-    os.path.join(
-        DIRETORIO_RESULTADOS,
-        "lab02_diversidade.png"
-    ),
-    dpi=150
-)
+    for estrategia in ["A", "B"]:
 
-plt.close()
+        plt.plot(
+            resultados[estrategia]["diversidade"],
+            label=f"Estratégia {estrategia}"
+        )
 
-print("\n")
-print("=" * 70)
-print("LAB 02 FINALIZADO")
-print("=" * 70)
+    plt.xlabel("Geração")
+    plt.ylabel("Diversidade genética")
+    plt.title(
+        "LAB 02 - Diversidade genética"
+    )
+
+    plt.grid(True, alpha=0.3)
+    plt.legend()
+    plt.tight_layout()
+
+    plt.savefig(
+        os.path.join(
+            DIRETORIO_RESULTADOS,
+            "lab02_diversidade.png"
+        ),
+        dpi=150
+    )
+
+    plt.close()
+
+    print("\n")
+    print("=" * 70)
+    print("LAB 02 FINALIZADO")
+    print("=" * 70)
 
 
-if name == "main":
-main()
+if __name__ == "__main__":
+    main()
